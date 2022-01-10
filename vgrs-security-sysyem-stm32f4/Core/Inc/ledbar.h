@@ -12,3 +12,5 @@
 #define L8_PIN GPIO_PIN_7
 #define L9_PIN GPIO_PIN_8
 #define L10_PIN GPIO_PIN_9
+
+// WARNING - when changing keypad pins configuration fix MX_GPIO_Init in the main.c

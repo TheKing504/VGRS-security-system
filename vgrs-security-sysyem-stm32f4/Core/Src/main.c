@@ -29,6 +29,8 @@
 
 #include "ledbar.h"
 
+#include "buttons_comb.h"
+
 #include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -79,9 +81,11 @@ char validPassword_1[KEYPAD_PASSWORD_LENGTH] = "123456789";
 char validPassword_2[KEYPAD_PASSWORD_LENGTH] = "987654321";
 int64_t keypadLastTimeValidated = -1;
 int8_t keypadLockState = LOCKED;
-char c = '+';
+char c = '!';
 
 // variable buttons comb
+int8_t buttonsCombInput[NUM_OF_BB_SIZE] = {0, 0, 0, 0};
+int8_t validButtonsComb[NUM_OF_BB_SIZE] = {1, 0, 1, 0};
 int8_t buttonsCombLockState = LOCKED;
 
 /* USER CODE BEGIN PV */
@@ -145,27 +149,55 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	readKeypadLockState();
-	readRFIDLockState();
+	  readButtonCombLockState();
+	  readKeypadLockState();
+	  readRFIDLockState();
 
-	if (rfidLockState == UNLOCKED)
-	{
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
-	} else {
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 0);
-	}
+	  if (rfidLockState == UNLOCKED)
+	  {
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
+	  } else {
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 0);
+	  }
 
-	if (keypadLockState == UNLOCKED)
-	{
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 1);
-	} else {
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 0);
-	}
+	  if (keypadLockState == UNLOCKED)
+	  {
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 1);
+	  } else {
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 0);
+	  }
 
+	  if (buttonsCombLockState == UNLOCKED)
+	  {
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, 1);
+	  } else {
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, 0);
+	  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
+}
+
+void readButtonCombLockState()
+{
+	updateButtonsCombState(&buttonsCombInput);
+	int8_t isValidCombState = 1;
+	for (int i = 0; i < NUM_OF_BB_SIZE; i++)
+	{
+		if (buttonsCombInput[i] != validButtonsComb[i])
+		{
+			isValidCombState = 0;
+			break;
+		}
+	}
+	if (isValidCombState == 1)
+	{
+		buttonsCombLockState = UNLOCKED;
+	} else
+	{
+		buttonsCombLockState = LOCKED;
+	}
 }
 
 void readKeypadLockState()
@@ -395,11 +427,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pins : PA4 - CS PIN for RC522(SPI1)*/
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Pin = CS_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(CS_PORT, &GPIO_InitStruct);
 
 
   /*Configure GPIO pins : PD12 PD13 PD14 PD15 - BOARD LEDs*/
@@ -434,6 +466,22 @@ static void MX_GPIO_Init(void)
   ledbar.Speed = GPIO_SPEED_FREQ_LOW;
 
   HAL_GPIO_Init(LEDBAR_PORT, &ledbar);
+
+  /*Configure GPIO pins for ledcomb  */
+  GPIO_InitTypeDef ledcombButtons;
+  ledcombButtons.Pin =  BB1_PIN | BB2_PIN | BB3_PIN | BB4_PIN;
+  ledcombButtons.Mode = GPIO_MODE_INPUT;
+  ledcombButtons.Pull = GPIO_PULLDOWN;
+
+  HAL_GPIO_Init(BUTTONS_COMB_PORT, &ledcombButtons);
+
+  GPIO_InitTypeDef ledcombLeds;
+  ledcombLeds.Pin =  BL1_PIN | BL2_PIN | BL3_PIN | BL4_PIN;
+  ledcombLeds.Mode = GPIO_MODE_OUTPUT_PP;
+  ledcombLeds.Pull = GPIO_NOPULL;
+  ledcombLeds.Speed = GPIO_SPEED_FREQ_LOW;
+
+  HAL_GPIO_Init(BUTTONS_COMB_PORT, &ledcombLeds);
 
 }
 
