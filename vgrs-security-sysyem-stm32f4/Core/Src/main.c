@@ -88,6 +88,9 @@ int8_t buttonsCombInput[NUM_OF_BB_SIZE] = {0, 0, 0, 0};
 int8_t validButtonsComb[NUM_OF_BB_SIZE] = {1, 0, 1, 0};
 int8_t buttonsCombLockState = LOCKED;
 
+// variable PIR sensor
+int8_t PIRSensorState = 0;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -148,7 +151,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
+
+	  PIRSensorState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
+
+	  /* USER CODE END WHILE */
 	  readButtonCombLockState();
 	  readKeypadLockState();
 	  readRFIDLockState();
@@ -173,7 +179,7 @@ int main(void)
 	  } else {
 		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, 0);
 	  }
-    /* USER CODE BEGIN 3 */
+	  /* USER CODE BEGIN 3 */
   }
   /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
@@ -268,6 +274,19 @@ void readRFIDLockState()
 		rfidLockState = LOCKED;
 	}
 	HAL_Delay(10);
+
+}
+
+void makeSoundLong()
+{
+	for(int i = 0; i < 10; i++)
+	{
+
+	}
+}
+
+void makeSoundShort()
+{
 
 }
 
@@ -482,6 +501,24 @@ static void MX_GPIO_Init(void)
   ledcombLeds.Speed = GPIO_SPEED_FREQ_LOW;
 
   HAL_GPIO_Init(BUTTONS_COMB_PORT, &ledcombLeds);
+
+  /*Configure GPIO pin for PIR sensor  */
+  GPIO_InitTypeDef pirsensor;
+  pirsensor.Pin =  GPIO_PIN_0;
+  pirsensor.Mode = GPIO_MODE_INPUT;
+  pirsensor.Pull = GPIO_PULLDOWN;
+
+  HAL_GPIO_Init(GPIOA, &pirsensor);
+
+
+  /*Configure GPIO pin for buzzer  */
+  GPIO_InitTypeDef buzzer;
+  buzzer.Pin =  GPIO_PIN_8;
+  buzzer.Mode = GPIO_MODE_OUTPUT_PP;
+  buzzer.Pull = GPIO_NOPULL;
+  buzzer.Speed = GPIO_SPEED_FREQ_LOW;
+
+  HAL_GPIO_Init(GPIOA, &buzzer);
 
 }
 
