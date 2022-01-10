@@ -27,6 +27,8 @@
 
 #include "keypad.h"
 
+#include "ledbar.h"
+
 #include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
@@ -134,6 +136,8 @@ int main(void)
   HAL_Delay(1000);
   /* USER CODE END 2 */
 
+  setLedbarTo(10);
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
@@ -169,9 +173,11 @@ void readKeypadLockState()
 	}
 
 	if (c == 'C') {
-		// passwordInput = "";
+		// clear password
+		passwordInput[0] = '\0';
 		return;
 	}
+
 }
 
 void readRFIDLockState()
@@ -351,6 +357,7 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pins : PA4 - CS PIN for RC522(SPI1)*/
@@ -385,11 +392,14 @@ static void MX_GPIO_Init(void)
 
   HAL_GPIO_Init(C1_PORT,&keypadColumns);
 
-  /*Configure GPIO pin Output Level */
-  // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_4|GPIO_PIN_13, GPIO_PIN_RESET);
+  /*Configure GPIO pins for ledbar  */
+  GPIO_InitTypeDef ledbar;
+  ledbar.Pin =  L1_PIN | L2_PIN | L3_PIN | L4_PIN | L5_PIN | L6_PIN | L7_PIN | L8_PIN | L9_PIN | L10_PIN;
+  ledbar.Mode = GPIO_MODE_OUTPUT_PP;
+  ledbar.Pull = GPIO_NOPULL;
+  ledbar.Speed = GPIO_SPEED_FREQ_LOW;
 
-  /*Configure GPIO pin Output Level */
-  // HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_Init(LEDBAR_PORT, &ledbar);
 
 }
 
