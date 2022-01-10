@@ -21,8 +21,13 @@
 #include "usb_host.h"
 
 #include "stm32f4xx_hal.h"
-#include"stdio.h"
+#include "stdio.h"
+
 #include "rc522.h"
+
+#include "keypad.h"
+
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -43,7 +48,8 @@
 #define LOCKED		0
 #define UNLOCKED  	1
 
-#define EXPIRE_RFID_LOCK_VALIDATION_TIME		30000
+#define EXPIRE_RFID_LOCK_VALIDATION_TIME		6000
+#define EXPIRE_KEYPAD_LOCK_VALIDATION_TIME		6000
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -63,9 +69,16 @@ int64_t rfidLastTimeValidated = -1;
 int8_t rfidLockState = LOCKED;
 
 
-// security parts variables
-int8_t keypadLockState = 0;
-int8_t buttonsCombLockState = 0;
+// variable keypad
+char passwordInput[10];
+char validPassword_1[] = "123456789AB";
+char validPassword_2[] = "BA987654321";
+int64_t keypadLastTimeValidated = -1;
+int8_t keypadLockState = LOCKED;
+char c = '+';
+
+// variable buttons comb
+int8_t buttonsCombLockState = LOCKED;
 
 /* USER CODE BEGIN PV */
 
@@ -126,17 +139,39 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	readRFIDLockState();
+	c = readKeypad();
+	// readRFIDLockState();
 
+	/*
 	if (rfidLockState == UNLOCKED)
 	{
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
 	} else {
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 0);
 	}
+	*/
     /* USER CODE BEGIN 3 */
 	}
   /* USER CODE END 3 */
+}
+
+void readKeypadLockState()
+{
+	if (keypadLastTimeValidated != -1 && HAL_GetTick() - keypadLastTimeValidated <= EXPIRE_KEYPAD_LOCK_VALIDATION_TIME && keypadLockState == UNLOCKED)
+	{
+		return;
+	}
+	char c = readKeypad();
+
+	// nothing clicked
+	if (c == '-') {
+		return;
+	}
+
+	if (c == 'C') {
+		// passwordInput = "";
+		return;
+	}
 }
 
 void readRFIDLockState()
@@ -314,11 +349,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct;
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
-  /*Configure GPIO pins : PA0 PA4 PA13 */
+  /*Configure GPIO pins : PA4 - CS PIN for RC522(SPI1)*/
   GPIO_InitStruct.Pin = GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
@@ -326,12 +361,29 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 
-  /*Configure GPIO pins : PD12 PD13 PD14 PD15 */
+  /*Configure GPIO pins : PD12 PD13 PD14 PD15 - BOARD LEDs*/
   GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+
+  /*Configure GPIO pins for keypad  */
+  GPIO_InitTypeDef keypadRows;
+  keypadRows.Pin =  R1_PIN | R2_PIN | R3_PIN | R4_PIN;
+  keypadRows.Mode = GPIO_MODE_OUTPUT_PP;
+  keypadRows.Pull = GPIO_NOPULL;
+  keypadRows.Speed = GPIO_SPEED_FREQ_LOW;
+
+  HAL_GPIO_Init(R1_PORT, &keypadRows);
+
+  GPIO_InitTypeDef keypadColumns;
+  keypadColumns.Pin =  C1_PIN | C2_PIN | C3_PIN | C4_PIN;
+  keypadColumns.Mode = GPIO_MODE_INPUT;
+  keypadColumns.Pull = GPIO_PULLDOWN;
+
+  HAL_GPIO_Init(C1_PORT,&keypadColumns);
 
   /*Configure GPIO pin Output Level */
   // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_4|GPIO_PIN_13, GPIO_PIN_RESET);
