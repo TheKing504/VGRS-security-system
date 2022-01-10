@@ -20,6 +20,10 @@
 #include "main.h"
 #include "usb_host.h"
 
+#include "stm32f4xx_hal.h"
+#include"stdio.h"
+#include "rc522.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -36,7 +40,10 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
+#define LOCKED		0
+#define UNLOCKED  	1
 
+#define EXPIRE_RFID_LOCK_VALIDATION_TIME		30000
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -45,6 +52,20 @@ I2C_HandleTypeDef hi2c1;
 I2S_HandleTypeDef hi2s3;
 
 SPI_HandleTypeDef hspi1;
+
+
+// variable RFID
+int8_t rc522State = -1;
+unsigned char cardID[5];
+unsigned char validID_1[5] = {0x39, 0xE1, 0x19, 0xB3, 0x72};	// chip
+unsigned char validID_2[5] = {0x26, 0x08, 0xD6, 0x12, 0xEA};	// card
+int64_t rfidLastTimeValidated = -1;
+int8_t rfidLockState = LOCKED;
+
+
+// security parts variables
+int8_t keypadLockState = 0;
+int8_t buttonsCombLockState = 0;
 
 /* USER CODE BEGIN PV */
 
@@ -59,7 +80,6 @@ static void MX_SPI1_Init(void);
 void MX_USB_HOST_Process(void);
 
 /* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -95,12 +115,10 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_I2C1_Init();
-  MX_I2S3_Init();
   MX_SPI1_Init();
-  MX_USB_HOST_Init();
+  MFRC522_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_Delay(1000);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -108,11 +126,42 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    MX_USB_HOST_Process();
+	readRFIDLockState();
 
+	if (rfidLockState == UNLOCKED)
+	{
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
+	} else {
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 0);
+	}
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
+}
+
+void readRFIDLockState()
+{
+	if (rfidLastTimeValidated != -1 && HAL_GetTick() - rfidLastTimeValidated <= EXPIRE_RFID_LOCK_VALIDATION_TIME && rfidLockState == UNLOCKED)
+	{
+		return;
+	}
+	rc522State = MFRC522_Check(cardID);
+	if (rc522State == MI_OK)
+	{
+		if (MFRC522_Compare(cardID, validID_1) == MI_OK || MFRC522_Compare(cardID, validID_2) == MI_OK)
+		{
+			rfidLockState = UNLOCKED;
+			rfidLastTimeValidated = HAL_GetTick();
+		} else
+		{
+			rfidLockState = LOCKED;
+		}
+	} else {
+		// no card detected
+		rfidLockState = LOCKED;
+	}
+	HAL_Delay(10);
+
 }
 
 /**
@@ -234,13 +283,6 @@ static void MX_I2S3_Init(void)
 static void MX_SPI1_Init(void)
 {
 
-  /* USER CODE BEGIN SPI1_Init 0 */
-
-  /* USER CODE END SPI1_Init 0 */
-
-  /* USER CODE BEGIN SPI1_Init 1 */
-
-  /* USER CODE END SPI1_Init 1 */
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
@@ -249,7 +291,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -258,9 +300,6 @@ static void MX_SPI1_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN SPI1_Init 2 */
-
-  /* USER CODE END SPI1_Init 2 */
 
 }
 
@@ -271,88 +310,34 @@ static void MX_SPI1_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  GPIO_InitTypeDef GPIO_InitStruct;
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOE_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(CS_I2C_SPI_GPIO_Port, CS_I2C_SPI_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(OTG_FS_PowerSwitchOn_GPIO_Port, OTG_FS_PowerSwitchOn_Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
-                          |Audio_RST_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : CS_I2C_SPI_Pin */
-  GPIO_InitStruct.Pin = CS_I2C_SPI_Pin;
+  /*Configure GPIO pins : PA0 PA4 PA13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(CS_I2C_SPI_GPIO_Port, &GPIO_InitStruct);
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : OTG_FS_PowerSwitchOn_Pin */
-  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin;
+
+  /*Configure GPIO pins : PD12 PD13 PD14 PD15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(OTG_FS_PowerSwitchOn_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PDM_OUT_Pin */
-  GPIO_InitStruct.Pin = PDM_OUT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
-  HAL_GPIO_Init(PDM_OUT_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : BOOT1_Pin */
-  GPIO_InitStruct.Pin = BOOT1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(BOOT1_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : CLK_IN_Pin */
-  GPIO_InitStruct.Pin = CLK_IN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
-  HAL_GPIO_Init(CLK_IN_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : LD4_Pin LD3_Pin LD5_Pin LD6_Pin
-                           Audio_RST_Pin */
-  GPIO_InitStruct.Pin = LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
-                          |Audio_RST_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : OTG_FS_OverCurrent_Pin */
-  GPIO_InitStruct.Pin = OTG_FS_OverCurrent_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(OTG_FS_OverCurrent_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pin Output Level */
+  // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_4|GPIO_PIN_13, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : MEMS_INT2_Pin */
-  GPIO_InitStruct.Pin = MEMS_INT2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(MEMS_INT2_GPIO_Port, &GPIO_InitStruct);
+  /*Configure GPIO pin Output Level */
+  // HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
 
 }
 
