@@ -18,7 +18,7 @@ void setLedbar(uint8_t conf[])
 }
 
 void setLedbarTo(int8_t to) {
-	uint8_t conf[10];
+	uint8_t conf[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	for (int i = 0; i < to; i++)
 	{
 		conf[i] = 1;

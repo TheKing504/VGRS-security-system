@@ -13,18 +13,22 @@ char readKeypad (void)
 
 	if (HAL_GPIO_ReadPin (C1_PORT, C1_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C1_PORT, C1_PIN));
 		return '1';
 	}
 	if (HAL_GPIO_ReadPin (C2_PORT, C2_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C2_PORT, C2_PIN));
 		return '2';
 	}
 	if (HAL_GPIO_ReadPin (C3_PORT, C3_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C3_PORT, C3_PIN));
 		return '3';
 	}
 	if (HAL_GPIO_ReadPin (C4_PORT, C4_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C4_PORT, C4_PIN));
 		return 'A';
 	}
 
@@ -35,18 +39,22 @@ char readKeypad (void)
 
 	if (HAL_GPIO_ReadPin (C1_PORT, C1_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C1_PORT, C1_PIN));
 		return '4';
 	}
 	if (HAL_GPIO_ReadPin (C2_PORT, C2_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C2_PORT, C2_PIN));
 		return '5';
 	}
 	if (HAL_GPIO_ReadPin (C3_PORT, C3_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C3_PORT, C3_PIN));
 		return '6';
 	}
 	if (HAL_GPIO_ReadPin (C4_PORT, C4_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C4_PORT, C4_PIN));
 		return 'B';
 	}
 
@@ -57,18 +65,22 @@ char readKeypad (void)
 
 	if (HAL_GPIO_ReadPin (C1_PORT, C1_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C1_PORT, C1_PIN));
 		return '7';
 	}
 	if (HAL_GPIO_ReadPin (C2_PORT, C2_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C2_PORT, C2_PIN));
 		return '8';
 	}
 	if (HAL_GPIO_ReadPin (C3_PORT, C3_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C3_PORT, C3_PIN));
 		return '9';
 	}
 	if (HAL_GPIO_ReadPin (C4_PORT, C4_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C4_PORT, C4_PIN));
 		return 'C';
 	}
 
@@ -79,18 +91,22 @@ char readKeypad (void)
 
 	if (HAL_GPIO_ReadPin (C1_PORT, C1_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C1_PORT, C1_PIN));
 		return '*';
 	}
 	if (HAL_GPIO_ReadPin (C2_PORT, C2_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C2_PORT, C2_PIN));
 		return '0';
 	}
 	if (HAL_GPIO_ReadPin (C3_PORT, C3_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C3_PORT, C3_PIN));
 		return '#';
 	}
 	if (HAL_GPIO_ReadPin (C4_PORT, C4_PIN))
 	{
+		while (HAL_GPIO_ReadPin (C4_PORT, C4_PIN));
 		return 'D';
 	}
 

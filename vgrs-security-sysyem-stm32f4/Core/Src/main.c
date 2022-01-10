@@ -52,6 +52,8 @@
 
 #define EXPIRE_RFID_LOCK_VALIDATION_TIME		6000
 #define EXPIRE_KEYPAD_LOCK_VALIDATION_TIME		6000
+
+#define KEYPAD_PASSWORD_LENGTH					9
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -72,9 +74,9 @@ int8_t rfidLockState = LOCKED;
 
 
 // variable keypad
-char passwordInput[10];
-char validPassword_1[] = "123456789AB";
-char validPassword_2[] = "BA987654321";
+char passwordInput[KEYPAD_PASSWORD_LENGTH];
+char validPassword_1[KEYPAD_PASSWORD_LENGTH] = "123456789";
+char validPassword_2[KEYPAD_PASSWORD_LENGTH] = "987654321";
 int64_t keypadLastTimeValidated = -1;
 int8_t keypadLockState = LOCKED;
 char c = '+';
@@ -136,26 +138,33 @@ int main(void)
   HAL_Delay(1000);
   /* USER CODE END 2 */
 
-  setLedbarTo(10);
+  setLedbarTo(0);
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
     /* USER CODE END WHILE */
-	c = readKeypad();
-	// readRFIDLockState();
+	readKeypadLockState();
+	readRFIDLockState();
 
-	/*
 	if (rfidLockState == UNLOCKED)
 	{
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
 	} else {
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 0);
 	}
-	*/
-    /* USER CODE BEGIN 3 */
+
+	if (keypadLockState == UNLOCKED)
+	{
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 1);
+	} else {
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 0);
 	}
+
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
 }
 
@@ -164,19 +173,44 @@ void readKeypadLockState()
 	if (keypadLastTimeValidated != -1 && HAL_GetTick() - keypadLastTimeValidated <= EXPIRE_KEYPAD_LOCK_VALIDATION_TIME && keypadLockState == UNLOCKED)
 	{
 		return;
+	} else {
+		keypadLockState = LOCKED;
 	}
-	char c = readKeypad();
 
-	// nothing clicked
-	if (c == '-') {
+	c = readKeypad();
+
+	if (c == '#') {
+		if (strcmp(passwordInput, validPassword_1) == 0 || strcmp(passwordInput, validPassword_2) == 0)
+		{
+			keypadLockState = UNLOCKED;
+			keypadLastTimeValidated = HAL_GetTick();
+		} else {
+			keypadLockState = LOCKED;
+		}
+		passwordInput[0] = '\0';
+		setLedbarTo(0);
 		return;
 	}
 
 	if (c == 'C') {
 		// clear password
 		passwordInput[0] = '\0';
+		setLedbarTo(0);
 		return;
 	}
+
+	if (strlen(passwordInput) == KEYPAD_PASSWORD_LENGTH)
+	{
+		return;
+	}
+
+	// nothing clicked
+	if (c == '-') {
+		return;
+	}
+
+	strncat(passwordInput, &c, 1);
+	setLedbarTo(strlen(passwordInput));
 
 }
 
