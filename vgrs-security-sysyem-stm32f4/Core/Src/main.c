@@ -166,30 +166,43 @@ int main(void)
 	  readKeypadLockState();
 	  readRFIDLockState();
 
+	  setCommunicationPins();
+	  /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE BEGIN 3 */
+  /* USER CODE END 3 */
+}
+
+void setCommunicationPins()
+{
 	  if (rfidLockState == UNLOCKED)
 	  {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, 1);
 		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
 	  } else {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, 0);
 		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 0);
 	  }
 
 	  if (keypadLockState == UNLOCKED)
 	  {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, 1);
 		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 1);
 	  } else {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, 0);
 		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 0);
 	  }
 
 	  if (buttonsCombLockState == UNLOCKED)
 	  {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_13, 1);
 		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, 1);
 	  } else {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_13, 0);
 		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, 0);
 	  }
-	  /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE BEGIN 3 */
-  /* USER CODE END 3 */
+
+	  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, PIRSensorState);
 }
 
 void readButtonCombLockState()
@@ -474,6 +487,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
 
   /*Configure GPIO pins : PA4 - CS PIN for RC522(SPI1)*/
   GPIO_InitStruct.Pin = CS_PIN;
@@ -549,6 +563,15 @@ static void MX_GPIO_Init(void)
   buzzer.Speed = GPIO_SPEED_FREQ_LOW;
 
   HAL_GPIO_Init(GPIOA, &buzzer);
+
+  /*Configure GPIO pin for communication with stm32f7  */
+  GPIO_InitTypeDef stm32f7;
+  stm32f7.Pin =  GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14;
+  stm32f7.Mode = GPIO_MODE_OUTPUT_PP;
+  stm32f7.Pull = GPIO_NOPULL;
+  stm32f7.Speed = GPIO_SPEED_FREQ_LOW;
+
+  HAL_GPIO_Init(GPIOE, &stm32f7);
 
 }
 

@@ -44,20 +44,34 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* Definitions for defaultTask */
-osThreadId_t defaultTaskHandle;
-const osThreadAttr_t defaultTask_attributes = {
+
+osThreadId_t mainTaskHandle;
+const osThreadAttr_t mainTask_attributes = {
   .name = "defaultTask",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+
 /* USER CODE BEGIN PV */
 uint8_t  lcd_status = LCD_OK;
 uint32_t ts_status = TS_OK;
 TS_StateTypeDef  TS_State = {0};
+
+
+#define LOCKED 		0
+#define UNLOCKED	1
+
+uint8_t  keypadLockState = LOCKED;
+uint8_t  rfidLockState = LOCKED;
+uint8_t  buttonsCombLockState = LOCKED;
+
+uint8_t  pirSensorState = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void mainTask(void *argument);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -97,6 +111,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
+  MX_GPIO_Init();
+  /*
   BSP_LCD_Init();
 
   BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
@@ -115,6 +131,13 @@ int main(void)
   BSP_LCD_DisplayStringAtLine(7, strptr);
 
   BSP_LCD_SetTextColor(LCD_COLOR_DARKRED);
+	*/
+
+  keypadLockState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
+  rfidLockState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
+  buttonsCombLockState = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2);
+  pirSensorState = HAL_GPIO_ReadPin(GPIOF, GPIO_PIN_10);
+
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -138,7 +161,7 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  mainTaskHandle = osThreadNew(mainTask, NULL, &mainTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -161,6 +184,37 @@ int main(void)
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
+}
+
+void MX_GPIO_Init(void)
+{
+	  GPIO_InitTypeDef GPIO_InitStruct;
+
+	  /* GPIO Ports Clock Enable */
+	  __HAL_RCC_GPIOA_CLK_ENABLE();
+	  __HAL_RCC_GPIOC_CLK_ENABLE();
+	  __HAL_RCC_GPIOF_CLK_ENABLE();
+
+	  /*Configure GPIO pins*/
+	  GPIO_InitStruct.Pin = GPIO_PIN_4 | GPIO_PIN_6;
+	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	  GPIO_InitStruct.Pin = GPIO_PIN_2;
+	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+	  GPIO_InitStruct.Pin = GPIO_PIN_10;
+	  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+
+
 }
 
 /**
@@ -220,6 +274,21 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void mainTask(void *argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+	  keypadLockState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
+	  rfidLockState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
+	  buttonsCombLockState = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2);
+	  pirSensorState = HAL_GPIO_ReadPin(GPIOF, GPIO_PIN_10);
+	  HAL_Delay(5);
+  }
+  /* USER CODE END 5 */
+}
 
 /* USER CODE END 4 */
 
