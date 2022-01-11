@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "usb_host.h"
 
 #include "stm32f4xx_hal.h"
 #include "stdio.h"
@@ -145,6 +144,14 @@ int main(void)
   HAL_Delay(1000);
   /* USER CODE END 2 */
 
+  makeSound2Beeb();
+
+  makeSound1Beeb();
+
+  makeSound1Beeb();
+
+  makeSound2Beeb();
+
   setLedbarTo(0);
 
   /* Infinite loop */
@@ -220,9 +227,11 @@ void readKeypadLockState()
 	if (c == '#') {
 		if (strcmp(passwordInput, validPassword_1) == 0 || strcmp(passwordInput, validPassword_2) == 0)
 		{
+			makeSound1Beeb();	// ok
 			keypadLockState = UNLOCKED;
 			keypadLastTimeValidated = HAL_GetTick();
 		} else {
+			makeSound2Beeb(); 	// wrong
 			keypadLockState = LOCKED;
 		}
 		passwordInput[0] = '\0';
@@ -263,10 +272,12 @@ void readRFIDLockState()
 	{
 		if (MFRC522_Compare(cardID, validID_1) == MI_OK || MFRC522_Compare(cardID, validID_2) == MI_OK)
 		{
+			makeSound1Beeb();	// ok
 			rfidLockState = UNLOCKED;
 			rfidLastTimeValidated = HAL_GetTick();
 		} else
 		{
+			makeSound2Beeb();	// wrong card
 			rfidLockState = LOCKED;
 		}
 	} else {
@@ -277,17 +288,36 @@ void readRFIDLockState()
 
 }
 
-void makeSoundLong()
+void makeSound2Beeb()
 {
-	for(int i = 0; i < 10; i++)
+	for(int i = 0; i < 40; i++)
 	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+		HAL_Delay(5);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+		HAL_Delay(2);
+	}
 
+	HAL_Delay(200);
+
+	for(int i = 0; i < 40; i++)
+	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+		HAL_Delay(5);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+		HAL_Delay(2);
 	}
 }
 
-void makeSoundShort()
+void makeSound1Beeb()
 {
-
+	for(int i = 0; i < 100; i++)
+	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+		HAL_Delay(5);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+		HAL_Delay(2);
+	}
 }
 
 /**
