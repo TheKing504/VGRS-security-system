@@ -145,7 +145,7 @@ int main(void)
   drawSecLevelsTitlesOnLCD();
   drawSecLevel1ValueOnLCD();
 
-  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);	// close reley
+  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_8, GPIO_PIN_RESET);	// close reley
 
   /* USER CODE END 2 */
 
@@ -312,7 +312,7 @@ void drawMainLockedUnlocked()
 }
 
 void drawMainLockedLocked() {
-	BSP_LCD_ClearStringLine(29); // xx
+	BSP_LCD_ClearStringLine(11);
 	drawSecLevelsTitlesOnLCD();
 	drawSecLevel1ValueOnLCD();
 	drawSecLevel2ValueOnLCD();
@@ -347,7 +347,7 @@ void MX_GPIO_Init(void)
 	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-	  GPIO_InitStruct.Pin = GPIO_PIN_9;
+	  GPIO_InitStruct.Pin = GPIO_PIN_8;
 	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	  GPIO_InitStruct.Pull = GPIO_NOPULL;
 	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
