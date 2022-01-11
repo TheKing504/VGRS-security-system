@@ -77,8 +77,8 @@ int8_t rfidLockState = LOCKED;
 
 // variable keypad
 char passwordInput[KEYPAD_PASSWORD_LENGTH];
-char validPassword_1[KEYPAD_PASSWORD_LENGTH] = "123456789";
-char validPassword_2[KEYPAD_PASSWORD_LENGTH] = "987654321";
+char validPassword_1[KEYPAD_PASSWORD_LENGTH] = "234567899";
+char validPassword_2[KEYPAD_PASSWORD_LENGTH] = "998765432";
 int64_t keypadLastTimeValidated = -1;
 int8_t keypadLockState = LOCKED;
 char c = '!';
