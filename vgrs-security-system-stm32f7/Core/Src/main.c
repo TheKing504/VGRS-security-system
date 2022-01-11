@@ -62,10 +62,20 @@ TS_StateTypeDef  TS_State = {0};
 #define UNLOCKED	1
 
 uint8_t  keypadLockState = LOCKED;
-uint8_t  rfidLockState = LOCKED;
-uint8_t  buttonsCombLockState = LOCKED;
 
+
+uint8_t  previousRfidLockState = LOCKED;
+uint8_t  rfidLockState = LOCKED;
+int64_t rfidLockStateLCDlastTimeUpdated = -1;
+
+
+uint8_t  previousbuttonsCombLockState = LOCKED;
+uint8_t  buttonsCombLockState = LOCKED;
+int64_t buttonsCombStateLCDlastTimeUpdated = -1;
+
+uint8_t  previousPirSensorState = 0;
 uint8_t  pirSensorState = 0;
+int64_t pirSensorStateLCDlastTimeUpdated = -1;
 
 /* USER CODE END PV */
 
@@ -112,11 +122,11 @@ int main(void)
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
   MX_GPIO_Init();
-  /*
+
   BSP_LCD_Init();
 
   BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
-  BSP_LCD_Clear(LCD_COLOR_WHITE);
+  BSP_LCD_Clear(LCD_COLOR_BLACK);
 
   ts_status = BSP_TS_Init(BSP_LCD_GetXSize(), BSP_LCD_GetYSize());
   while(ts_status != TS_OK);
@@ -124,19 +134,12 @@ int main(void)
   ts_status = BSP_TS_ITConfig();
   while(ts_status != TS_OK);
 
-  uint8_t strptr[] = "Vesel bozic in srecno 2022!";
-  BSP_LCD_SetFont(&Font24);
-  BSP_LCD_SetTextColor(LCD_COLOR_DARKBLUE);
-  BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-  BSP_LCD_DisplayStringAtLine(7, strptr);
+  drawFirmTitleOnLCD();
 
-  BSP_LCD_SetTextColor(LCD_COLOR_DARKRED);
-	*/
+  drawCameraStateOnLCD();
 
-  keypadLockState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
-  rfidLockState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
-  buttonsCombLockState = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2);
-  pirSensorState = HAL_GPIO_ReadPin(GPIOF, GPIO_PIN_10);
+  drawSecLevelsTitlesOnLCD();
+  drawSecLevel1ValueOnLCD();
 
   /* USER CODE END 2 */
 
@@ -184,6 +187,92 @@ int main(void)
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
+}
+
+void drawFirmTitleOnLCD()
+{
+	 BSP_LCD_SetFont(&Font24);
+	 BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+	 BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+	 BSP_LCD_DisplayStringAtLine(1, " Advanced SECURITY SYSTEM - Kraljevo varovanje");
+}
+
+void drawSecLevelsTitlesOnLCD()
+{
+	 BSP_LCD_SetFont(&Font24);
+	 BSP_LCD_SetTextColor(LCD_COLOR_LIGHTGRAY);
+	 BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+
+	 BSP_LCD_DisplayStringAtLine(4, "              Security level 1:");
+	 BSP_LCD_DisplayStringAtLine(9, "              Security level 2:");
+	 BSP_LCD_DisplayStringAtLine(14, "              Security level 3:");
+
+
+	 BSP_LCD_SetTextColor(LCD_COLOR_RED);
+	 BSP_LCD_DisplayStringAtLine(6, "               NOT ACTIVATED");
+	 BSP_LCD_DisplayStringAtLine(11, "               NOT ACTIVATED");
+	 BSP_LCD_DisplayStringAtLine(16, "               NOT ACTIVATED");
+}
+
+// buttons combs
+void drawSecLevel1ValueOnLCD()
+{
+
+	BSP_LCD_SetFont(&Font24);
+	BSP_LCD_SetTextColor(LCD_COLOR_LIGHTGRAY);
+	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+
+	BSP_LCD_ClearStringLine(6);
+	if (buttonsCombLockState == LOCKED)
+	{
+		 BSP_LCD_SetTextColor(LCD_COLOR_RED);
+		 BSP_LCD_DisplayStringAtLine(6, "                NOT ACTIVATED");
+	} else
+	{
+		 BSP_LCD_SetTextColor(LCD_COLOR_GREEN);
+		 BSP_LCD_DisplayStringAtLine(6, "                 ACTIVATED");
+	}
+}
+
+// rfid
+void drawSecLevel2ValueOnLCD()
+{
+	BSP_LCD_SetFont(&Font24);
+	BSP_LCD_SetTextColor(LCD_COLOR_LIGHTGRAY);
+	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+
+	BSP_LCD_ClearStringLine(11);
+	if (rfidLockState == LOCKED)
+	{
+		 BSP_LCD_SetTextColor(LCD_COLOR_RED);
+		 BSP_LCD_DisplayStringAtLine(11, "                NOT ACTIVATED");
+	} else
+	{
+		 BSP_LCD_SetTextColor(LCD_COLOR_GREEN);
+		 BSP_LCD_DisplayStringAtLine(11, "                 ACTIVATED");
+	}
+}
+
+// keypad
+void drawSecLevel3ValueOnLCD()
+{
+	BSP_LCD_ClearStringLine(16);
+}
+
+void drawCameraStateOnLCD()
+{
+	BSP_LCD_SetFont(&Font16);
+	BSP_LCD_ClearStringLine(29);
+	BSP_LCD_SetTextColor(LCD_COLOR_GRAY);
+	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+
+	if (pirSensorState == 1)
+	{
+		BSP_LCD_DisplayStringAtLine(29, " Camera is activated.");
+	} else
+	{
+		BSP_LCD_DisplayStringAtLine(29, " Camera is not activated.");
+	}
 }
 
 void MX_GPIO_Init(void)
@@ -286,6 +375,27 @@ void mainTask(void *argument)
 	  buttonsCombLockState = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2);
 	  pirSensorState = HAL_GPIO_ReadPin(GPIOF, GPIO_PIN_10);
 	  HAL_Delay(5);
+
+
+	  if (previousPirSensorState != pirSensorState && (pirSensorStateLCDlastTimeUpdated == -1 || HAL_GetTick() - pirSensorStateLCDlastTimeUpdated > 3000))
+	  {
+		  drawCameraStateOnLCD();
+		  previousPirSensorState = pirSensorState;
+		  pirSensorStateLCDlastTimeUpdated = HAL_GetTick();
+	  }
+	  if (previousbuttonsCombLockState != buttonsCombLockState && (buttonsCombStateLCDlastTimeUpdated == -1 || HAL_GetTick() - buttonsCombStateLCDlastTimeUpdated > 1000))
+	  {
+		  drawSecLevel1ValueOnLCD();
+		  previousbuttonsCombLockState = buttonsCombLockState;
+		  buttonsCombStateLCDlastTimeUpdated = HAL_GetTick();
+	  }
+
+	  if (previousRfidLockState != rfidLockState && (rfidLockStateLCDlastTimeUpdated == -1 || HAL_GetTick() - rfidLockStateLCDlastTimeUpdated > 100))
+	  {
+		  drawSecLevel2ValueOnLCD();
+		  previousRfidLockState = rfidLockState;
+		  rfidLockStateLCDlastTimeUpdated = HAL_GetTick();
+	  }
   }
   /* USER CODE END 5 */
 }
