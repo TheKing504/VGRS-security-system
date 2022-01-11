@@ -41,11 +41,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  18 .debug_line   0000f09e  00000000  00000000  00057659  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    000ca2ca  00000000  00000000  000666f7  2**0
+ 19 .debug_str    000ca2cc  00000000  00000000  000666f7  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .comment      00000053  00000000  00000000  001309c1  2**0
+ 20 .comment      00000053  00000000  00000000  001309c3  2**0
                   CONTENTS, READONLY
- 21 .debug_frame  00003010  00000000  00000000  00130a14  2**2
+ 21 .debug_frame  00003010  00000000  00000000  00130a18  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -1526,7 +1526,7 @@ void readKeypadLockState()
  8000cd4:	e9d3 2300 	ldrd	r2, r3, [r3]
  8000cd8:	1a84      	subs	r4, r0, r2
  8000cda:	eb61 0503 	sbc.w	r5, r1, r3
- 8000cde:	f241 7270 	movw	r2, #6000	; 0x1770
+ 8000cde:	f247 5230 	movw	r2, #30000	; 0x7530
  8000ce2:	f04f 0300 	mov.w	r3, #0
  8000ce6:	42a2      	cmp	r2, r4
  8000ce8:	41ab      	sbcs	r3, r5
@@ -1692,7 +1692,7 @@ void readRFIDLockState()
  8000df0:	e9d3 2300 	ldrd	r2, r3, [r3]
  8000df4:	1a84      	subs	r4, r0, r2
  8000df6:	eb61 0503 	sbc.w	r5, r1, r3
- 8000dfa:	f241 7270 	movw	r2, #6000	; 0x1770
+ 8000dfa:	f247 5230 	movw	r2, #30000	; 0x7530
  8000dfe:	f04f 0300 	mov.w	r3, #0
  8000e02:	42a2      	cmp	r2, r4
  8000e04:	41ab      	sbcs	r3, r5

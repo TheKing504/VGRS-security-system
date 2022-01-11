@@ -51,8 +51,8 @@
 #define LOCKED		0
 #define UNLOCKED  	1
 
-#define EXPIRE_RFID_LOCK_VALIDATION_TIME		6000
-#define EXPIRE_KEYPAD_LOCK_VALIDATION_TIME		6000
+#define EXPIRE_RFID_LOCK_VALIDATION_TIME		30000
+#define EXPIRE_KEYPAD_LOCK_VALIDATION_TIME		30000
 
 #define KEYPAD_PASSWORD_LENGTH					9
 /* USER CODE END PM */
@@ -76,8 +76,8 @@ int8_t rfidLockState = LOCKED;
 
 // variable keypad
 char passwordInput[KEYPAD_PASSWORD_LENGTH];
-char validPassword_1[KEYPAD_PASSWORD_LENGTH] = "234567899";
-char validPassword_2[KEYPAD_PASSWORD_LENGTH] = "998765432";
+char validPassword_1[KEYPAD_PASSWORD_LENGTH] = "235689999";
+char validPassword_2[KEYPAD_PASSWORD_LENGTH] = "22";
 int64_t keypadLastTimeValidated = -1;
 int8_t keypadLockState = LOCKED;
 char c = '!';

@@ -61,21 +61,25 @@ TS_StateTypeDef  TS_State = {0};
 #define LOCKED 		0
 #define UNLOCKED	1
 
-uint8_t  keypadLockState = LOCKED;
+uint8_t previousKeypadLockState = LOCKED;
+uint8_t keypadLockState = LOCKED;
+int64_t keypadLockStateLCDlastTimeUpdated = -1;
 
-
-uint8_t  previousRfidLockState = LOCKED;
-uint8_t  rfidLockState = LOCKED;
+uint8_t previousRfidLockState = LOCKED;
+uint8_t rfidLockState = LOCKED;
 int64_t rfidLockStateLCDlastTimeUpdated = -1;
 
 
-uint8_t  previousbuttonsCombLockState = LOCKED;
-uint8_t  buttonsCombLockState = LOCKED;
+uint8_t previousbuttonsCombLockState = LOCKED;
+uint8_t buttonsCombLockState = LOCKED;
 int64_t buttonsCombStateLCDlastTimeUpdated = -1;
 
-uint8_t  previousPirSensorState = 0;
-uint8_t  pirSensorState = 0;
+uint8_t previousPirSensorState = 0;
+uint8_t pirSensorState = 0;
 int64_t pirSensorStateLCDlastTimeUpdated = -1;
+
+uint8_t mainLockState = LOCKED;
+int64_t mainLockStateLastTimeUpdated = -1;
 
 /* USER CODE END PV */
 
@@ -140,6 +144,8 @@ int main(void)
 
   drawSecLevelsTitlesOnLCD();
   drawSecLevel1ValueOnLCD();
+
+  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_9, GPIO_PIN_RESET);	// close reley
 
   /* USER CODE END 2 */
 
@@ -256,7 +262,20 @@ void drawSecLevel2ValueOnLCD()
 // keypad
 void drawSecLevel3ValueOnLCD()
 {
+	BSP_LCD_SetFont(&Font24);
+	BSP_LCD_SetTextColor(LCD_COLOR_LIGHTGRAY);
+	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+
 	BSP_LCD_ClearStringLine(16);
+	if (keypadLockState == LOCKED)
+	{
+		 BSP_LCD_SetTextColor(LCD_COLOR_RED);
+		 BSP_LCD_DisplayStringAtLine(16, "                NOT ACTIVATED");
+	} else
+	{
+		 BSP_LCD_SetTextColor(LCD_COLOR_GREEN);
+		 BSP_LCD_DisplayStringAtLine(16, "                 ACTIVATED");
+	}
 }
 
 void drawCameraStateOnLCD()
@@ -273,6 +292,31 @@ void drawCameraStateOnLCD()
 	{
 		BSP_LCD_DisplayStringAtLine(29, " Camera is not activated.");
 	}
+}
+
+void drawMainLockedUnlocked()
+{
+	BSP_LCD_SetFont(&Font24);
+	BSP_LCD_ClearStringLine(6);
+	BSP_LCD_ClearStringLine(11);
+	BSP_LCD_ClearStringLine(16);
+
+	BSP_LCD_ClearStringLine(4);
+	BSP_LCD_ClearStringLine(9);
+	BSP_LCD_ClearStringLine(14);
+
+	BSP_LCD_SetTextColor(LCD_COLOR_ORANGE);
+	BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+
+	BSP_LCD_DisplayStringAtLine(11, "            MAIN LOCK ACTIVATED");
+}
+
+void drawMainLockedLocked() {
+	BSP_LCD_ClearStringLine(29); // xx
+	drawSecLevelsTitlesOnLCD();
+	drawSecLevel1ValueOnLCD();
+	drawSecLevel2ValueOnLCD();
+	drawSecLevel3ValueOnLCD();
 }
 
 void MX_GPIO_Init(void)
@@ -303,6 +347,11 @@ void MX_GPIO_Init(void)
 	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
+	  GPIO_InitStruct.Pin = GPIO_PIN_9;
+	  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	  GPIO_InitStruct.Pull = GPIO_NOPULL;
+	  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
 }
 
@@ -395,6 +444,32 @@ void mainTask(void *argument)
 		  drawSecLevel2ValueOnLCD();
 		  previousRfidLockState = rfidLockState;
 		  rfidLockStateLCDlastTimeUpdated = HAL_GetTick();
+	  }
+
+	  if (previousKeypadLockState != keypadLockState && (keypadLockStateLCDlastTimeUpdated == -1 || HAL_GetTick() - keypadLockStateLCDlastTimeUpdated > 100))
+	  {
+		  drawSecLevel3ValueOnLCD();
+		  previousKeypadLockState = keypadLockState;
+		  keypadLockStateLCDlastTimeUpdated = HAL_GetTick();
+	  }
+
+	  if (buttonsCombLockState == UNLOCKED && rfidLockState == UNLOCKED && keypadLockState == UNLOCKED && mainLockState == LOCKED)
+	  {
+		  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_8, GPIO_PIN_SET);	// Open reley
+		  mainLockState = UNLOCKED;
+		  mainLockStateLastTimeUpdated = HAL_GetTick();
+		  drawMainLockedUnlocked();
+	  } else
+	  {
+		  if (mainLockStateLastTimeUpdated != -1 && HAL_GetTick() - mainLockStateLastTimeUpdated < 30000)
+		  {
+			  // Wait - do nothing
+		  } else if (mainLockState == UNLOCKED)
+		  {
+			  HAL_GPIO_WritePin(GPIOF, GPIO_PIN_8, GPIO_PIN_RESET);	// close reley
+			  mainLockState = LOCKED;
+			  drawMainLockedLocked();
+		  }
 	  }
   }
   /* USER CODE END 5 */

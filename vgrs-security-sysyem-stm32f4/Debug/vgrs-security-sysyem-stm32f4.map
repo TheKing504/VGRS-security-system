@@ -6623,44 +6623,44 @@ LOAD /Applications/STM32CubeIDE.app/Contents/Eclipse/plugins/com.st.stm32cube.id
  .debug_line    0x000000000000d7ec      0xaf8 ./Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.o
  .debug_line    0x000000000000e2e4      0xdba ./USB_HOST/Target/usbh_conf.o
 
-.debug_str      0x0000000000000000    0xca2ca
+.debug_str      0x0000000000000000    0xca2cc
  .debug_str     0x0000000000000000    0xbfb9c ./Core/Src/buttons_comb.o
                                       0xbfe35 (size before relaxing)
  .debug_str     0x00000000000bfb9c      0x120 ./Core/Src/keypad.o
                                       0xbfdb7 (size before relaxing)
  .debug_str     0x00000000000bfcbc       0xf7 ./Core/Src/ledbar.o
                                       0xbfd82 (size before relaxing)
- .debug_str     0x00000000000bfdb3     0x5cea ./Core/Src/main.o
-                                      0xc5d73 (size before relaxing)
- .debug_str     0x00000000000c5a9d      0x24e ./Core/Src/rc522.o
+ .debug_str     0x00000000000bfdb3     0x5cec ./Core/Src/main.o
+                                      0xc5d75 (size before relaxing)
+ .debug_str     0x00000000000c5a9f      0x24e ./Core/Src/rc522.o
                                       0xc0c70 (size before relaxing)
- .debug_str     0x00000000000c5ceb      0x122 ./Core/Src/stm32f4xx_hal_msp.o
+ .debug_str     0x00000000000c5ced      0x122 ./Core/Src/stm32f4xx_hal_msp.o
                                       0xc0d50 (size before relaxing)
- .debug_str     0x00000000000c5e0d      0x43d ./Core/Src/stm32f4xx_it.o
+ .debug_str     0x00000000000c5e0f      0x43d ./Core/Src/stm32f4xx_it.o
                                       0xc0792 (size before relaxing)
- .debug_str     0x00000000000c624a       0xaf ./Core/Src/system_stm32f4xx.o
+ .debug_str     0x00000000000c624c       0xaf ./Core/Src/system_stm32f4xx.o
                                       0xbfde0 (size before relaxing)
- .debug_str     0x00000000000c62f9       0x36 ./Core/Startup/startup_stm32f407vgtx.o
+ .debug_str     0x00000000000c62fb       0x36 ./Core/Startup/startup_stm32f407vgtx.o
                                          0x98 (size before relaxing)
- .debug_str     0x00000000000c632f      0xa54 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o
+ .debug_str     0x00000000000c6331      0xa54 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o
                                       0xc08c2 (size before relaxing)
- .debug_str     0x00000000000c6d83      0x392 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o
+ .debug_str     0x00000000000c6d85      0x392 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o
                                       0xc06b1 (size before relaxing)
- .debug_str     0x00000000000c7115      0x15a ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.o
+ .debug_str     0x00000000000c7117      0x15a ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.o
                                       0xbff87 (size before relaxing)
- .debug_str     0x00000000000c726f      0x407 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_hcd.o
+ .debug_str     0x00000000000c7271      0x407 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_hcd.o
                                       0xc0491 (size before relaxing)
- .debug_str     0x00000000000c7676      0x259 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.o
+ .debug_str     0x00000000000c7678      0x259 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.o
                                       0xc01e2 (size before relaxing)
- .debug_str     0x00000000000c78cf      0x579 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.o
+ .debug_str     0x00000000000c78d1      0x579 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.o
                                       0xc0684 (size before relaxing)
- .debug_str     0x00000000000c7e48      0x648 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.o
+ .debug_str     0x00000000000c7e4a      0x648 ./Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_ll_usb.o
                                       0xc0701 (size before relaxing)
- .debug_str     0x00000000000c8490     0x1b94 ./Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.o
+ .debug_str     0x00000000000c8492     0x1b94 ./Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_core.o
                                       0xc6037 (size before relaxing)
- .debug_str     0x00000000000ca024       0xa0 ./Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.o
+ .debug_str     0x00000000000ca026       0xa0 ./Middlewares/ST/STM32_USB_Host_Library/Core/Src/usbh_pipes.o
                                       0xc5e5b (size before relaxing)
- .debug_str     0x00000000000ca0c4      0x206 ./USB_HOST/Target/usbh_conf.o
+ .debug_str     0x00000000000ca0c6      0x206 ./USB_HOST/Target/usbh_conf.o
                                       0xc6b95 (size before relaxing)
 
 .comment        0x0000000000000000       0x53
