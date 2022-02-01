@@ -1,0 +1,2 @@
+ledbar.c:6:6:setLedbar	16	static
+ledbar.c:20:6:setLedbarTo	32	static

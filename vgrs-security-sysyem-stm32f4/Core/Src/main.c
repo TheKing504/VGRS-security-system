@@ -18,11 +18,19 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "usb_host.h"
 
 #include "stm32f4xx_hal.h"
-#include"stdio.h"
+#include "stdio.h"
+
 #include "rc522.h"
+
+#include "keypad.h"
+
+#include "ledbar.h"
+
+#include "buttons_comb.h"
+
+#include <string.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -44,6 +52,9 @@
 #define UNLOCKED  	1
 
 #define EXPIRE_RFID_LOCK_VALIDATION_TIME		30000
+#define EXPIRE_KEYPAD_LOCK_VALIDATION_TIME		30000
+
+#define KEYPAD_PASSWORD_LENGTH					9
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -63,9 +74,21 @@ int64_t rfidLastTimeValidated = -1;
 int8_t rfidLockState = LOCKED;
 
 
-// security parts variables
-int8_t keypadLockState = 0;
-int8_t buttonsCombLockState = 0;
+// variable keypad
+char passwordInput[KEYPAD_PASSWORD_LENGTH];
+char validPassword_1[KEYPAD_PASSWORD_LENGTH] = "235689999";
+char validPassword_2[KEYPAD_PASSWORD_LENGTH] = "22";
+int64_t keypadLastTimeValidated = -1;
+int8_t keypadLockState = LOCKED;
+char c = '!';
+
+// variable buttons comb
+int8_t buttonsCombInput[NUM_OF_BB_SIZE] = {0, 0, 0, 0};
+int8_t validButtonsComb[NUM_OF_BB_SIZE] = {1, 0, 1, 0};
+int8_t buttonsCombLockState = LOCKED;
+
+// variable PIR sensor
+int8_t PIRSensorState = 0;
 
 /* USER CODE BEGIN PV */
 
@@ -121,22 +144,134 @@ int main(void)
   HAL_Delay(1000);
   /* USER CODE END 2 */
 
+  makeSound2Beeb();
+
+  makeSound1Beeb();
+
+  makeSound1Beeb();
+
+  makeSound2Beeb();
+
+  setLedbarTo(0);
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
-	readRFIDLockState();
 
-	if (rfidLockState == UNLOCKED)
-	{
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
-	} else {
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 0);
-	}
-    /* USER CODE BEGIN 3 */
-	}
+	  PIRSensorState = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_0);
+
+	  /* USER CODE END WHILE */
+	  readButtonCombLockState();
+	  readKeypadLockState();
+	  readRFIDLockState();
+
+	  setCommunicationPins();
+	  /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE BEGIN 3 */
   /* USER CODE END 3 */
+}
+
+void setCommunicationPins()
+{
+	  if (rfidLockState == UNLOCKED)
+	  {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, 1);
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 1);
+	  } else {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_12, 0);
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, 0);
+	  }
+
+	  if (keypadLockState == UNLOCKED)
+	  {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, 1);
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 1);
+	  } else {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, 0);
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, 0);
+	  }
+
+	  if (buttonsCombLockState == UNLOCKED)
+	  {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_13, 1);
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, 1);
+	  } else {
+		  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_13, 0);
+		  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, 0);
+	  }
+
+	  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, PIRSensorState);
+}
+
+void readButtonCombLockState()
+{
+	updateButtonsCombState(&buttonsCombInput);
+	int8_t isValidCombState = 1;
+	for (int i = 0; i < NUM_OF_BB_SIZE; i++)
+	{
+		if (buttonsCombInput[i] != validButtonsComb[i])
+		{
+			isValidCombState = 0;
+			break;
+		}
+	}
+	if (isValidCombState == 1)
+	{
+		buttonsCombLockState = UNLOCKED;
+	} else
+	{
+		buttonsCombLockState = LOCKED;
+	}
+}
+
+void readKeypadLockState()
+{
+	if (keypadLastTimeValidated != -1 && HAL_GetTick() - keypadLastTimeValidated <= EXPIRE_KEYPAD_LOCK_VALIDATION_TIME && keypadLockState == UNLOCKED)
+	{
+		return;
+	} else {
+		keypadLockState = LOCKED;
+	}
+
+	c = readKeypad();
+
+	if (c == '#') {
+		if (strcmp(passwordInput, validPassword_1) == 0 || strcmp(passwordInput, validPassword_2) == 0)
+		{
+			makeSound1Beeb();	// ok
+			keypadLockState = UNLOCKED;
+			keypadLastTimeValidated = HAL_GetTick();
+		} else {
+			makeSound2Beeb(); 	// wrong
+			keypadLockState = LOCKED;
+		}
+		passwordInput[0] = '\0';
+		setLedbarTo(0);
+		return;
+	}
+
+	if (c == 'C') {
+		// clear password
+		passwordInput[0] = '\0';
+		setLedbarTo(0);
+		return;
+	}
+
+	if (strlen(passwordInput) == KEYPAD_PASSWORD_LENGTH)
+	{
+		return;
+	}
+
+	// nothing clicked
+	if (c == '-') {
+		return;
+	}
+
+	strncat(passwordInput, &c, 1);
+	setLedbarTo(strlen(passwordInput));
+
 }
 
 void readRFIDLockState()
@@ -150,10 +285,12 @@ void readRFIDLockState()
 	{
 		if (MFRC522_Compare(cardID, validID_1) == MI_OK || MFRC522_Compare(cardID, validID_2) == MI_OK)
 		{
+			makeSound1Beeb();	// ok
 			rfidLockState = UNLOCKED;
 			rfidLastTimeValidated = HAL_GetTick();
 		} else
 		{
+			makeSound2Beeb();	// wrong card
 			rfidLockState = LOCKED;
 		}
 	} else {
@@ -162,6 +299,38 @@ void readRFIDLockState()
 	}
 	HAL_Delay(10);
 
+}
+
+void makeSound2Beeb()
+{
+	for(int i = 0; i < 40; i++)
+	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+		HAL_Delay(5);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+		HAL_Delay(2);
+	}
+
+	HAL_Delay(200);
+
+	for(int i = 0; i < 40; i++)
+	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+		HAL_Delay(5);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+		HAL_Delay(2);
+	}
+}
+
+void makeSound1Beeb()
+{
+	for(int i = 0; i < 100; i++)
+	{
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+		HAL_Delay(5);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+		HAL_Delay(2);
+	}
 }
 
 /**
@@ -314,30 +483,95 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct;
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
 
-  /*Configure GPIO pins : PA0 PA4 PA13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  /*Configure GPIO pins : PA4 - CS PIN for RC522(SPI1)*/
+  GPIO_InitStruct.Pin = CS_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(CS_PORT, &GPIO_InitStruct);
 
 
-  /*Configure GPIO pins : PD12 PD13 PD14 PD15 */
+  /*Configure GPIO pins : PD12 PD13 PD14 PD15 - BOARD LEDs*/
   GPIO_InitStruct.Pin = GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 | GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
-  /*Configure GPIO pin Output Level */
-  // HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_4|GPIO_PIN_13, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  // HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12|GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15, GPIO_PIN_RESET);
+  /*Configure GPIO pins for keypad  */
+  GPIO_InitTypeDef keypadRows;
+  keypadRows.Pin =  R1_PIN | R2_PIN | R3_PIN | R4_PIN;
+  keypadRows.Mode = GPIO_MODE_OUTPUT_PP;
+  keypadRows.Pull = GPIO_NOPULL;
+  keypadRows.Speed = GPIO_SPEED_FREQ_LOW;
+
+  HAL_GPIO_Init(R1_PORT, &keypadRows);
+
+  GPIO_InitTypeDef keypadColumns;
+  keypadColumns.Pin =  C1_PIN | C2_PIN | C3_PIN | C4_PIN;
+  keypadColumns.Mode = GPIO_MODE_INPUT;
+  keypadColumns.Pull = GPIO_PULLDOWN;
+
+  HAL_GPIO_Init(C1_PORT,&keypadColumns);
+
+  /*Configure GPIO pins for ledbar  */
+  GPIO_InitTypeDef ledbar;
+  ledbar.Pin =  L1_PIN | L2_PIN | L3_PIN | L4_PIN | L5_PIN | L6_PIN | L7_PIN | L8_PIN | L9_PIN | L10_PIN;
+  ledbar.Mode = GPIO_MODE_OUTPUT_PP;
+  ledbar.Pull = GPIO_NOPULL;
+  ledbar.Speed = GPIO_SPEED_FREQ_LOW;
+
+  HAL_GPIO_Init(LEDBAR_PORT, &ledbar);
+
+  /*Configure GPIO pins for ledcomb  */
+  GPIO_InitTypeDef ledcombButtons;
+  ledcombButtons.Pin =  BB1_PIN | BB2_PIN | BB3_PIN | BB4_PIN;
+  ledcombButtons.Mode = GPIO_MODE_INPUT;
+  ledcombButtons.Pull = GPIO_PULLDOWN;
+
+  HAL_GPIO_Init(BUTTONS_COMB_PORT, &ledcombButtons);
+
+  GPIO_InitTypeDef ledcombLeds;
+  ledcombLeds.Pin =  BL1_PIN | BL2_PIN | BL3_PIN | BL4_PIN;
+  ledcombLeds.Mode = GPIO_MODE_OUTPUT_PP;
+  ledcombLeds.Pull = GPIO_NOPULL;
+  ledcombLeds.Speed = GPIO_SPEED_FREQ_LOW;
+
+  HAL_GPIO_Init(BUTTONS_COMB_PORT, &ledcombLeds);
+
+  /*Configure GPIO pin for PIR sensor  */
+  GPIO_InitTypeDef pirsensor;
+  pirsensor.Pin =  GPIO_PIN_0;
+  pirsensor.Mode = GPIO_MODE_INPUT;
+  pirsensor.Pull = GPIO_PULLDOWN;
+
+  HAL_GPIO_Init(GPIOA, &pirsensor);
+
+
+  /*Configure GPIO pin for buzzer  */
+  GPIO_InitTypeDef buzzer;
+  buzzer.Pin =  GPIO_PIN_8;
+  buzzer.Mode = GPIO_MODE_OUTPUT_PP;
+  buzzer.Pull = GPIO_NOPULL;
+  buzzer.Speed = GPIO_SPEED_FREQ_LOW;
+
+  HAL_GPIO_Init(GPIOA, &buzzer);
+
+  /*Configure GPIO pin for communication with stm32f7  */
+  GPIO_InitTypeDef stm32f7;
+  stm32f7.Pin =  GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14;
+  stm32f7.Mode = GPIO_MODE_OUTPUT_PP;
+  stm32f7.Pull = GPIO_NOPULL;
+  stm32f7.Speed = GPIO_SPEED_FREQ_LOW;
+
+  HAL_GPIO_Init(GPIOE, &stm32f7);
 
 }
 

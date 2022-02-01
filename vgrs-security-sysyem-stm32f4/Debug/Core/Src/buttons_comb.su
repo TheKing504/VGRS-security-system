@@ -1,0 +1,2 @@
+buttons_comb.c:10:6:updateButtonsCombState	32	static
+buttons_comb.c:59:8:toogleBBState	16	static
