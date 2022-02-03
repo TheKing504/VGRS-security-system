@@ -1,0 +1,5 @@
+RFID RFID-RC522
+BUZZER YL-44
+KEYPAD https://www.circuitbasics.com/wp-content/uploads/2017/05/Arduino-Keypad-Tutorial-3X4-and-4X4-Keypads.jpg
+PIR HC-SR501
+LED BAR - http://www.learningaboutelectronics.com/images/10-segment-LED-bar-graph.png
